@@ -1,3 +1,4 @@
+'use client'
 import Image from "next/image";
 import getStripe from "@/utils/get-stripe";
 import Head from 'next/head';
@@ -5,6 +6,24 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { AppBar, Box, Button, Container, Grid, Toolbar, Typography } from "@mui/material";
 
 export default function Home() {
+  
+  const handleSubmit = async () => {
+    const checkoutSession = await fetch('/api/checkout_sessions', {
+      method: 'POST',
+      headers: { origin: 'http://localhost:3000' },
+    })
+    const checkoutSessionJson = await checkoutSession.json()
+  
+    const stripe = await getStripe()
+    const {error} = await stripe.redirectToCheckout({
+      sessionId: checkoutSessionJson.id,
+    })
+  
+    if (error) {
+      console.warn(error.message)
+    }
+  }
+
   return (
     <Container maxWidth="100vw">
       <Head>
@@ -34,7 +53,7 @@ export default function Home() {
           {''}
           The easiest way of the flashcard from your text
         </Typography>
-        <Button variant="contained" color="primary" sx={{mt : 2}}>Get Started</Button>
+        <Button variant="contained" color="primary" sx={{mt : 2}} href="/generate">Get Started</Button>
       </Box>
 
 
@@ -100,7 +119,7 @@ export default function Home() {
               {''}
               unlimited flashcards and storage, with priority support.
             </Typography>
-            <Button variant="contained" color="primary" sx={{mt:2}}>Choose Pro</Button>
+            <Button variant="contained" color="primary" sx={{mt:2}} onClick={handleSubmit}>Choose Pro</Button>
               </Box>
           </Grid>
         </Grid>
