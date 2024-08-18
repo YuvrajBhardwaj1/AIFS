@@ -16,30 +16,24 @@ You should return in the following JSON format:
 `
 
 export async function POST(req) {
-    const data = await req.text();  // Changed to text() for better inspection
-    console.log('Request data:', data);
+  const data = await req.text();
+  console.log('Request data:', data);
 
-    const openai = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1", 
-      apiKey: process.env.OPENROUTER_API_KEY, 
-    });
+  const openai = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+  });
 
-    // Create the completion request
-    const completion = await openai.chat.completions.create({
-      model: "meta-llama/llama-3-8b-instruct:free",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: 'user', content: data }, // Ensure the data has the expected structure
-      ],
-    });
+  const completion = await openai.chat.completions.create({
+    model: "meta-llama/llama-3-8b-instruct:free",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: 'user', content: data },
+    ],
+  });
 
-    // Log the raw response to inspect it
-    const responseBody = completion.choices[0].message.content;
-    console.log('Raw response body:', responseBody);
-
-    // Parse the JSON response from the OpenAI API
-    const flashcards = JSON.parse(completion.choices[0].message.content)
-
-    // Return the flashcards as a JSON response
-    return NextResponse.json(flashcards.flashcards)
-  }
+  const responseBody = completion.choices[0].message.content;
+  console.log('Raw response body:', responseBody);
+  const flashcards = JSON.parse(completion.choices[0].message.content)
+  return NextResponse.json(flashcards.flashcards)
+}

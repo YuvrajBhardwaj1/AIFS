@@ -27,6 +27,25 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const { plan } = await req.json();
+
+  const priceOptions = {
+    basic: {
+      amount: 5,
+      name: 'Basic subscription',
+    },
+    pro: {
+      amount: 10,
+      name: 'Pro subscription',
+    }
+  }
+
+  const selectedPlan = priceOptions[plan];
+
+  if (!selectedPlan) {
+    return NextResponse.json({ error: { message: 'Invalid plan selected' } }, { status: 400 })
+  }
+
   const params = {
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -35,9 +54,9 @@ export async function POST(req) {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'Pro subscription',
+            name: selectedPlan.name,
           },
-          unit_amount: formatAmountForStripe(10, 'usd'),  // $10.00 in cents
+          unit_amount: formatAmountForStripe(selectedPlan.amount, 'usd'),
           recurring: {
             interval: 'month',
             interval_count: 1,
@@ -49,10 +68,12 @@ export async function POST(req) {
     success_url: `${req.headers.get('origin')}/results?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${req.headers.get('origin')}/results?session_id={CHECKOUT_SESSION_ID}`,
   }
-  
-  const checkoutSession = await stripe.checkout.sessions.create(params)
 
-  return NextResponse.json(checkoutSession, {
-    status: 200,
-  })
+  try {
+    const checkoutSession = await stripe.checkout.sessions.create(params)
+    return NextResponse.json(checkoutSession, { status: 200 })
+  } catch (error) {
+    console.error('Error creating checkout session:', error)
+    return NextResponse.json({ error: { message: error.message } }, { status: 500 })
+  }
 }
