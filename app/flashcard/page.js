@@ -88,41 +88,38 @@ export default function Flashcard() {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            router.push('/sign-in')
+            router.push('/sign-in');
         }
-    }, [isLoaded, isSignedIn, router])
+    }, [isLoaded, isSignedIn, router]);
+
+    useEffect(() => {
+        if (isLoaded && isSignedIn && user && search) {
+            async function getFlashcard() {
+                const docRef = doc(collection(doc(collection(db, 'users'), user.id), "flashcardSets"), search);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const flashcards = data.flashcards || [];
+                    setFlashcards(flashcards);
+                } else {
+                    console.log("No such document!");
+                }
+            }
+            getFlashcard();
+        }
+    }, [isLoaded, isSignedIn, user, search]);
 
     if (!isLoaded || !isSignedIn) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
                 <CircularProgress />
             </Box>
-        )
+        );
     }
 
-    useEffect(() => {
-        async function getFlashcard() {
-            if (!search || !user) return;
-
-            const docRef = doc(collection(doc(collection(db, 'users'), user.id), "flashcardSets"), search);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const flashcards = data.flashcards || [];
-                setFlashcards(flashcards);
-            } else {
-                console.log('No such document!');
-            }
-        }
-        getFlashcard();
-    }, [search, user]);
-
     const handleCardClick = (id) => {
-        setFlipped((prev) => ({
-            ...prev,
-            [id]: !prev[id],
-        }));
+        setFlipped({ ...flipped, [id]: !flipped[id] });
     };
 
     return (
@@ -132,37 +129,49 @@ export default function Flashcard() {
                     <IconButton edge="start" color="inherit" aria-label="logo" href="/">
                         <FlashOnIcon fontSize="large" />
                     </IconButton>
-                    <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
-                        Flashcards
+                    <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                        Flashcard Details
                     </Typography>
                 </Toolbar>
             </CustomAppBar>
-            <Container maxWidth="lg" sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', pt: 8, pb: 6 }}>
-                <Box flexGrow={1} display="flex" flexDirection="column" alignItems="center" sx={{ py: 4 }}>
+            <Container
+                maxWidth="lg"
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: '100vh',
+                    pt: 8,
+                    pb: 10,
+                }}
+            >
+                <Box
+                    flexGrow={1}
+                    display="flex"
+                    flexDirection="column"
+                    justifyContent="center"
+                    alignItems="center"
+                    sx={{ p: 2 }}
+                >
                     <Grid container spacing={3}>
                         {flashcards.length > 0 ? (
                             flashcards.map((flashcard, index) => (
                                 <Grid item xs={12} sm={6} md={4} key={index}>
                                     <CustomCard>
-                                        <CardActionArea onClick={() => handleCardClick(index)}>
-                                            <CardContent>
-                                                <CardFace sx={{
-                                                    transform: flipped[index] ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                                                }}>
-                                                    <Box>
-                                                        <Typography variant='h5'>{flashcard.front}</Typography>
-                                                    </Box>
-                                                    <Box>
-                                                        <Typography variant='h5'>{flashcard.back}</Typography>
-                                                    </Box>
-                                                </CardFace>
-                                            </CardContent>
+                                        <CardActionArea onClick={() => handleCardClick(flashcard.id)}>
+                                            <CardFace style={{ transform: flipped[flashcard.id] ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+                                                <Box>
+                                                    <Typography variant="h5">{flashcard.front}</Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="h5">{flashcard.back}</Typography>
+                                                </Box>
+                                            </CardFace>
                                         </CardActionArea>
                                     </CustomCard>
                                 </Grid>
                             ))
                         ) : (
-                            <Typography variant="h6" sx={{ mt: 4 }}>
+                            <Typography variant="h6" component="div" sx={{ mt: 4 }}>
                                 No flashcards available.
                             </Typography>
                         )}
@@ -171,7 +180,7 @@ export default function Flashcard() {
             </Container>
             <Footer>
                 <Typography variant="body2" color="textSecondary">
-                    © {new Date().getFullYear()} Flashcards. All rights reserved.
+                    © {new Date().getFullYear()} FlashCards. All rights reserved.
                 </Typography>
             </Footer>
         </ThemeProvider>

@@ -61,32 +61,33 @@ export default function Flashcard() {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            router.push('/sign-in')
+            router.push('/sign-in');
         }
-    }, [isLoaded, isSignedIn, router])
+    }, [isLoaded, isSignedIn, router]);
+
+    useEffect(() => {
+        if (isLoaded && isSignedIn && user) {
+            async function getFlashcards() {
+                const docRef = doc(collection(db, "users"), user.id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const collections = docSnap.data().flashcardSets || [];
+                    setFlashcards(collections);
+                } else {
+                    await setDoc(docRef, { flashcardSets: [] });
+                }
+            }
+            getFlashcards();
+        }
+    }, [isLoaded, isSignedIn, user]);
 
     if (!isLoaded || !isSignedIn) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
                 <CircularProgress />
             </Box>
-        )
+        );
     }
-
-    useEffect(() => {
-        async function getFlashcards() {
-            if (!user) return;
-            const docRef = doc(collection(db, "users"), user.id);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const collections = docSnap.data().flashcardSets || [];
-                setFlashcards(collections);
-            } else {
-                await setDoc(docRef, { flashcardSets: [] });
-            }
-        }
-        getFlashcards();
-    }, [user]);
 
     const handleCardClick = (id) => {
         router.push(`/flashcard?id=${id}`);
